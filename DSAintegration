@@ -1,0 +1,24 @@
+import java.util.*;
+public class DSA{
+	public static void main(String args[])
+	{
+		Scanner in=new Scanner(System.in);
+		System.out.println("1:Arraycalculator\n2:Linkedlistcalculator\n3:queuecalculator");
+		int ch=in.nextInt();
+		if(ch==1)
+		{
+			Arraylist.main(null);
+		}
+		else if(ch==2)
+		{
+			Linkedlist.main(null);
+		}
+		else if(ch==3)
+		{
+			Queuecalculator.main(null);
+		}
+		else{
+			System.out.println("invalid");
+		}
+	}
+}
