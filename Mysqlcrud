@@ -1,0 +1,158 @@
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class Crudmysql {
+    private static final String DB_URL = "jdbc:mysql://localhost:3306/sanvika";
+    private static final String USER = "root";
+    private static final String PASSWORD = "Navi@444";
+
+    private static final Map<Integer, String> tableNames = new HashMap<>();
+    private static final Map<Integer, String> operationNames = new HashMap<>();
+    private static final Map<String, String> sqlFilePaths = new HashMap<>();
+
+    static {
+        tableNames.put(1, "Customers");
+        tableNames.put(2, "Orders");
+        tableNames.put(3, "Products");
+        tableNames.put(4, "Employees");
+
+        operationNames.put(1, "Created");
+        operationNames.put(2, "Inserted values into");
+        operationNames.put(3, "Updated records in");
+        operationNames.put(4, "Deleted records from");
+        operationNames.put(5, "Selected records from");
+        sqlFilePaths.put("1-1", "C:\\likhitha\\crcustomers.txt");
+        sqlFilePaths.put("1-2", "C:\\likhitha\\incustomers.txt");
+        sqlFilePaths.put("1-3", "C:\\likhitha\\ucustomers.txt");
+        sqlFilePaths.put("1-4", "C:\\likhitha\\dcustomers.txt");
+        sqlFilePaths.put("1-5", "C:\\likhitha\\scustomers.txt");
+        sqlFilePaths.put("2-1", "C:\\likhitha\\crorders.txt");
+        sqlFilePaths.put("2-2", "C:\\likhitha\\inorders.txt");
+        sqlFilePaths.put("2-3", "C:\\likhitha\\uporders.txt");
+        sqlFilePaths.put("2-4", "C:\\likhitha\\dorders.txt");
+        sqlFilePaths.put("2-5", "C:\\likhitha\\sorders.txt");
+        sqlFilePaths.put("3-1", "C:\\likhitha\\cproducts.txt");
+        sqlFilePaths.put("3-2", "C:\\likhitha\\inproducts.txt");
+        sqlFilePaths.put("3-3", "C:\\likhitha\\upproducts.txt");
+        sqlFilePaths.put("3-4", "C:\\likhitha\\dproducts.txt");
+        sqlFilePaths.put("3-5", "C:\\likhitha\\sproducts.txt");
+        sqlFilePaths.put("4-1", "C:\\likhitha\\cemployee.txt");
+        sqlFilePaths.put("4-2", "C:\\likhitha\\iemployee.txt");
+        sqlFilePaths.put("4-3", "C:\\likhitha\\upemployee.txt");
+        sqlFilePaths.put("4-4", "C:\\likhitha\\demployee.txt");
+        sqlFilePaths.put("4-5", "C:\\likhitha\\semployee.txt");
+    }
+
+    public static void main(String[] args) {
+        Scanner scanner = new Scanner(System.in);
+
+        while (true) {
+            System.out.println("\nSelect Table:");
+            System.out.println("1. Customers");
+            System.out.println("2. Orders");
+            System.out.println("3. Products");
+            System.out.println("4. Employees");
+            System.out.println("5. Exit");
+            System.out.print("Enter choice: ");
+            int tableChoice = scanner.nextInt();
+
+            if (tableChoice == 5) {
+                System.out.println("Exiting...");
+                break;
+            }
+
+            while (true) {
+                System.out.println("\nSelect Operation for Table " + tableNames.get(tableChoice) + ":");
+                System.out.println("1. Create Table");
+                System.out.println("2. Insert Values");
+                System.out.println("3. Update Records");
+                System.out.println("4. Delete Records");
+                System.out.println("5. Select Records");
+                System.out.println("6. Go Back");
+                System.out.print("Enter choice: ");
+                int operationChoice = scanner.nextInt();
+
+                if (operationChoice == 6) {
+                    break;
+                }
+
+                String key = tableChoice + "-" + operationChoice;
+                String filePath = sqlFilePaths.get(key);
+
+                if (filePath == null) {
+                    System.out.println("No SQL file mapped for this choice.");
+                    continue;
+                }
+
+                System.out.println("Running SQL file: " + filePath);
+                try {
+                    if (operationChoice == 5) {
+                        executeSelectQuery(filePath);
+                    } else {
+                        executeSQLFile(filePath);
+                        System.out.println(operationNames.get(operationChoice) + " " + tableNames.get(tableChoice) + " successfully.");
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error executing file: " + e.getMessage());
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        scanner.close();
+    }
+
+    private static void executeSQLFile(String filePath) throws Exception {
+        StringBuilder sql = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                sql.append(line).append("\n");
+            }
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement()) {
+
+            String[] queries = sql.toString().split(";");
+            for (String query : queries) {
+                query = query.trim();
+                if (!query.isEmpty()) {
+                    stmt.execute(query);
+                }
+            }
+        }
+    }
+
+    private static void executeSelectQuery(String filePath) throws Exception {
+        StringBuilder sql = new StringBuilder();
+        try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                sql.append(line).append(" ");
+            }
+        }
+
+        try (Connection conn = DriverManager.getConnection(DB_URL, USER, PASSWORD);
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql.toString().trim())) {
+            ResultSetMetaData meta = rs.getMetaData();
+            int columnCount = meta.getColumnCount();
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.print(meta.getColumnName(i) + "\t");
+            }
+            System.out.println("\n--------------------------------------");
+            while (rs.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    System.out.print(rs.getString(i) + "\t");
+                }
+                System.out.println();
+            }
+
+        }
+    }
+}
